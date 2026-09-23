@@ -125,6 +125,26 @@ class TraceCaptureTest(unittest.TestCase):
         self.assertEqual(artifacts["output"]["nested"]["token"], "[REDACTED]")
         self.assertEqual(artifacts["output"]["user"], "alice")
 
+    def test_prompt_capture_resolver_and_static(self):
+        @trace(
+            sink=self.sink,
+            prompt=lambda args, kwargs: {"system": kwargs.get("system"), "user": args[0]},
+        )
+        def run(query, *, system):
+            return query
+
+        run("hello", system="be concise")
+        self.assertEqual(
+            self.last()["artifacts"]["prompt"], {"system": "be concise", "user": "hello"}
+        )
+
+        @trace(sink=self.sink, prompt={"system": "sys", "user": "u"})
+        def f(x):
+            return x
+
+        f(1)
+        self.assertEqual(self.last()["artifacts"]["prompt"], {"system": "sys", "user": "u"})
+
     def test_metric_keys_are_not_redacted(self):
         @trace(
             sink=self.sink,

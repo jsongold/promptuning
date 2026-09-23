@@ -120,11 +120,12 @@ poetry run prompttrace-ui --db .prompttrace/analysis.duckdb
 # open http://127.0.0.1:5173
 ```
 
-The UI is read-only: a variant comparison table (runs, success rate, avg score,
-p50/p95 latency, tokens, cost, Δ vs the baseline variant), a case-paired
-side-by-side view of each variant's prompt/output, a filterable trace list
-(experiment / variant / case / status / text), and a per-trace detail page with
-keys, metrics, artifacts, error, and raw JSON.
+The UI is read-only: a case-paired **prompt comparison** — each variant's
+prompt shown side by side (A/B/C…) with a line diff against the baseline
+variant — plus a variant stats table (runs, success rate, avg score, p50/p95
+latency, tokens, cost, Δ vs baseline), a filterable trace list, and a per-trace
+detail page. Prompts are recorded via the SDK's `prompt=` option (or the
+`artifacts` resolver), e.g. `prompt=lambda args, kwargs: {"system": kwargs["system_prompt"]}`.
 
 ### SDK tests
 

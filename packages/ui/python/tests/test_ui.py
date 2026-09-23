@@ -17,7 +17,11 @@ def make_record(trace_id, operation, status="ok", variant="v1", score=0.9):
         "durationMs": 1000,
         "status": status,
         "keys": {"experiment": "exp-1", "variant": variant, "case": "case-1"},
-        "artifacts": {"input": {"query": "hello"}, "output": "world"},
+        "artifacts": {
+            "input": {"query": "hello"},
+            "output": "world",
+            "prompt": {"system": f"system for {variant}", "user": "hello"},
+        },
         "metrics": {"score": score, "tokens.total": 120},
         "sdk": {"language": "python", "version": "0.1.0"},
     }
@@ -46,8 +50,8 @@ class UiTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         body = response.get_data(as_text=True)
         self.assertIn("agent.run", body)
+        self.assertIn("Prompt comparison", body)
         self.assertIn("Variant comparison", body)
-        self.assertIn("Side by side", body)
         self.assertIn("case-1", body)
         self.assertIn("id-1", body)
         self.assertIn("id-2", body)
@@ -57,6 +61,12 @@ class UiTest(unittest.TestCase):
         body = response.get_data(as_text=True)
         self.assertIn('class="compare-column ok"', body)
         self.assertIn('class="compare-column error"', body)
+
+    def test_index_shows_prompt_diff(self):
+        response = self.client.get("/")
+        body = response.get_data(as_text=True)
+        self.assertIn("Δ B vs A", body)
+        self.assertIn('class="diff-added"', body)
 
     def test_index_filters_by_variant(self):
         response = self.client.get("/?variant=v2")

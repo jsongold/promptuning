@@ -30,7 +30,7 @@ def fake_llm(prompt: str) -> str:
         "variant": kwargs["variant"],
         "case": kwargs["case"],
     },
-    artifacts=lambda ctx: {"prompt": {"system": ctx.kwargs.get("system_prompt")}},
+    prompt=lambda args, kwargs: {"system": kwargs.get("system_prompt"), "user": args[0]},
     metrics=lambda ctx: {"tokens.total": len(ctx.args[0]), "score": 0.95},
     redactors=[KeyNameRedactor()],
 )

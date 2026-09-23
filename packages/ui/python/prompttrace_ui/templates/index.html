@@ -11,6 +11,7 @@
     <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">PT</span><span>PromptTrace<small>trace analysis</small></span></a>
     <nav aria-label="Primary navigation">
       <a aria-current="page" href="{{ url_for('index') }}">Traces</a>
+      <a href="{{ url_for('index') }}#prompts">Prompts</a>
       <a href="{{ url_for('index') }}#compare">Compare</a>
       <span class="db-hint">{{ db }}</span>
     </nav>
@@ -34,6 +35,40 @@
         <label>Search<input name="q" value="{{ filters.q }}" placeholder="text…"></label>
         <button class="button dark" type="submit">Filter →</button>
       </form>
+
+      <section id="prompts" aria-labelledby="prompts-heading">
+        <h2 class="section-heading" id="prompts-heading">Prompt comparison</h2>
+        {% if compare_cases %}
+          {% for group in compare_cases %}
+            <div class="compare-case">
+              <p class="case-label">{{ group.case }}</p>
+              <div class="compare-grid">
+                {% for col in group.columns %}
+                  <a class="compare-column {{ col.status }}" href="{{ url_for('detail', trace_id=col.id) }}">
+                    <span class="compare-head"><strong>{{ col.letter }}</strong><span>{{ col.variant }}</span><span class="status {{ col.status }}">{{ col.status }}</span></span>
+                    {% if col.error %}<p class="case-error"><small>error</small>{{ col.error }}</p>{% endif %}
+                    <pre class="case-prompt">{{ col.prompt or '—' }}</pre>
+                    <p class="case-output"><small>output</small>{{ col.output or '—' }}</p>
+                  </a>
+                {% endfor %}
+              </div>
+              {% if group.diffs %}
+                <div class="diff-list">
+                  {% for diff in group.diffs %}
+                    <div class="diff-block">
+                      <p class="diff-title">Δ {{ diff.letter }} vs {{ group.baseline_letter }}{{ ' · identical' if diff.identical else '' }}</p>
+                      {% if not diff.identical %}<pre class="diff-pre">{% for kind, line in diff.lines %}<span class="diff-{{ kind }}">{{ line }}</span>
+{% endfor %}</pre>{% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="muted">No cases to pair — add the same <code>case</code> key across variants to see prompts side by side.</p>
+        {% endif %}
+      </section>
 
       <section id="compare" aria-labelledby="compare-heading">
         <h2 class="section-heading" id="compare-heading">Variant comparison</h2>
@@ -62,29 +97,6 @@
           <p class="muted">Baseline is the variant with the most runs; Δ is relative to it.</p>
         {% else %}
           <p class="muted">No matching traces.</p>
-        {% endif %}
-      </section>
-
-      <section id="side-by-side" aria-labelledby="sbs-heading">
-        <h2 class="section-heading" id="sbs-heading">Side by side</h2>
-        {% if compare_cases %}
-          {% for group in compare_cases %}
-            <div class="compare-case">
-              <p class="case-label">{{ group.case }}</p>
-              <div class="compare-grid">
-                {% for col in group.columns %}
-                  <a class="compare-column {{ col.status }}" href="{{ url_for('detail', trace_id=col.id) }}">
-                    <span class="compare-head"><strong>{{ col.letter }}</strong><span>{{ col.variant }}</span><span class="status {{ col.status }}">{{ col.status }}</span></span>
-                    {% if col.prompt %}<p class="case-prompt"><small>prompt</small>{{ col.prompt }}</p>{% endif %}
-                    {% if col.error %}<p class="case-error"><small>error</small>{{ col.error }}</p>{% endif %}
-                    <p class="case-output"><small>output</small>{{ col.output or '—' }}</p>
-                  </a>
-                {% endfor %}
-              </div>
-            </div>
-          {% endfor %}
-        {% else %}
-          <p class="muted">No cases to pair — add the same <code>case</code> key across variants to see them side by side.</p>
         {% endif %}
       </section>
 

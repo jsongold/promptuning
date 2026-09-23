@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 import json
 from pathlib import Path
 from typing import Any
@@ -48,6 +49,39 @@ def _preview(value: Any) -> str:
         return "<unprintable>"
     text = " ".join(text.split())
     return text[:300] + ("…" if len(text) > 300 else "")
+
+
+def _text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    try:
+        return json.dumps(value, ensure_ascii=False, indent=2)
+    except Exception:  # noqa: BLE001
+        return str(value)
+
+
+def _line_diff(a: str, b: str) -> list[tuple[str, str]]:
+    a_lines = a.splitlines() or [""]
+    b_lines = b.splitlines() or [""]
+    out: list[tuple[str, str]] = []
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a_lines, b_lines).get_opcodes():
+        if tag == "equal":
+            for line in a_lines[i1:i2]:
+                out.append(("context", line))
+        elif tag == "delete":
+            for line in a_lines[i1:i2]:
+                out.append(("removed", line))
+        elif tag == "insert":
+            for line in b_lines[j1:j2]:
+                out.append(("added", line))
+        elif tag == "replace":
+            for line in a_lines[i1:i2]:
+                out.append(("removed", line))
+            for line in b_lines[j1:j2]:
+                out.append(("added", line))
+    return out
 
 
 def _variant_compare(items: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, str]]:
@@ -118,14 +152,17 @@ def _variant_compare(items: list[dict[str, Any]]) -> tuple[list[dict[str, Any]],
             row["p50_diff"] = None
 
     letters = {variant: chr(ord("A") + index) for index, variant in enumerate(order)}
+    baseline_variant = rows[0]["variant"] if rows else None
     cases: list[dict[str, Any]] = []
     for case, by_variant in sorted(case_cells.items(), key=lambda kv: -max(len(v) for v in kv[1].values())):
         columns = []
+        baseline_prompt: str | None = None
         for variant in order:
             traces = by_variant.get(variant)
             if not traces:
                 continue
             trace = traces[0]
+            prompt_text = _text(trace["prompt"])
             columns.append(
                 {
                     "letter": letters[variant],
@@ -133,13 +170,36 @@ def _variant_compare(items: list[dict[str, Any]]) -> tuple[list[dict[str, Any]],
                     "id": trace["id"],
                     "status": trace["status"],
                     "output": _preview(trace["output"]),
-                    "prompt": _preview(trace["prompt"]),
+                    "prompt": prompt_text,
                     "error": trace["error"],
                 }
             )
+            if variant == baseline_variant:
+                baseline_prompt = prompt_text
         if len(columns) < 2:
             continue
-        cases.append({"case": case, "columns": columns})
+        diffs = []
+        if baseline_prompt is not None:
+            for column in columns:
+                if column["variant"] == baseline_variant:
+                    continue
+                diff = _line_diff(baseline_prompt, column["prompt"])
+                diffs.append(
+                    {
+                        "letter": column["letter"],
+                        "variant": column["variant"],
+                        "identical": not any(kind in ("added", "removed") for kind, _ in diff),
+                        "lines": diff,
+                    }
+                )
+        cases.append(
+            {
+                "case": case,
+                "baseline_letter": letters.get(baseline_variant, "A") if baseline_variant else "A",
+                "columns": columns,
+                "diffs": diffs,
+            }
+        )
     return rows, cases, letters
 
 

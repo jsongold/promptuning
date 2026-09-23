@@ -105,6 +105,20 @@ test("key name redaction", () => {
   assert.equal(output.user, "alice")
 })
 
+test("prompt capture via resolver and static", () => {
+  const sink = new MemorySink()
+  const run = traced(
+    { sink, prompt: ({ args }) => ({ system: String(args[1]), user: String(args[0]) }) },
+    (q: string, s: string) => q,
+  )
+  run("hello", "be concise")
+  assert.deepEqual(sink.records[0].artifacts.prompt, { system: "be concise", user: "hello" })
+
+  const f = traced({ sink, prompt: { system: "sys", user: "u" } }, (x: number) => x)
+  f(1)
+  assert.deepEqual(sink.records[1].artifacts.prompt, { system: "sys", user: "u" })
+})
+
 test("metric keys are not redacted", () => {
   const sink = new MemorySink()
   const f = traced(
