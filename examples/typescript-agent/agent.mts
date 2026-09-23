@@ -29,7 +29,7 @@ const runAgent = traced(
       variant: args[2].variant,
       case: args[2].case,
     }),
-    artifacts: ({ args }) => ({ prompt: { system: args[1] } }),
+    prompt: ({ args }) => ({ system: args[1], user: args[0] }),
     metrics: ({ args }) => ({ "tokens.total": args[0].length, score: 0.95 }),
     redactors: [new KeyNameRedactor()],
   },

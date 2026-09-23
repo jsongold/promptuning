@@ -36,6 +36,7 @@ class TraceContext:
 class _Options:
     sink: Any
     operation: str | None = None
+    prompt: Any = None
     keys: Any = None
     artifacts: Callable[[TraceContext], dict] | None = None
     metrics: Callable[[TraceContext], dict] | None = None
@@ -105,6 +106,9 @@ def _make_record(
         artifacts["input"] = to_jsonable({"args": args, "kwargs": kwargs})
     if options.capture_output and context.error is None:
         artifacts["output"] = context.result
+    if options.prompt is not None:
+        resolved_prompt = options.prompt(args, kwargs) if callable(options.prompt) else options.prompt
+        artifacts["prompt"] = to_jsonable(resolved_prompt)
     if options.artifacts is not None:
         extra = options.artifacts(context)
         if extra is not None:
@@ -152,6 +156,7 @@ def trace(
     *,
     sink: Any,
     operation: str | None = None,
+    prompt: Any = None,
     keys: Any = None,
     artifacts: Callable[[TraceContext], dict] | None = None,
     metrics: Callable[[TraceContext], dict] | None = None,
@@ -165,6 +170,7 @@ def trace(
     options = _Options(
         sink=sink,
         operation=operation,
+        prompt=prompt,
         keys=keys,
         artifacts=artifacts,
         metrics=metrics,

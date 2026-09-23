@@ -61,6 +61,7 @@ export type KeyResolver<Args extends unknown[]> = (ctx: BeforeContext<Args>) => 
 export interface TraceOptions<Args extends unknown[], Result> {
   sink: TraceSink
   operation?: string
+  prompt?: JsonValue | ((ctx: BeforeContext<Args>) => JsonValue)
   keys?: SearchKeys | KeyResolver<Args>
   artifacts?: (ctx: TraceContext<Args, Result>) => JsonObject
   metrics?: (ctx: TraceContext<Args, Result>) => Record<string, number>
@@ -255,6 +256,13 @@ function makeRecord<Args extends unknown[], Result>(
   const artifacts: Record<string, JsonValue> = {}
   if (options.captureInput) artifacts.input = toJsonable({ args })
   if (options.captureOutput && error === undefined) artifacts.output = toJsonable(result)
+  if (options.prompt !== undefined) {
+    artifacts.prompt = toJsonable(
+      typeof options.prompt === "function"
+        ? (options.prompt as (ctx: BeforeContext<Args>) => JsonValue)({ args })
+        : options.prompt,
+    )
+  }
   if (options.artifacts) {
     const extra = options.artifacts({
       args,

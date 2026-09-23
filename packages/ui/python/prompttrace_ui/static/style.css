@@ -231,3 +231,14 @@ footer p { margin: 0; color: var(--muted); }
 @media (max-width: 760px) {
   .compare-grid { grid-auto-columns: minmax(240px, 82vw); }
 }
+
+/* --- Prompt comparison --- */
+.case-prompt { margin: 0; padding: .6rem; border: 1px solid #e2e4dd; border-radius: 4px; background: #f7f8f3; font: .72rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.diff-list { display: grid; gap: .7rem; margin-top: 1rem; }
+.diff-block { border: 1px solid var(--line); border-radius: 6px; }
+.diff-title { margin: 0; padding: .5rem .8rem; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .66rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.diff-pre { margin: 0; padding: .7rem .8rem; background: #fbfbf8; font: .72rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.diff-pre span { display: block; }
+.diff-added { color: #165e3a; background: #e2f3e8; }
+.diff-removed { color: #8b241c; background: #fbe3e0; text-decoration: line-through; }
+.diff-context { color: #6a726d; }
