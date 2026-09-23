@@ -1,0 +1,58 @@
+{% macro run_column(run, position) %}
+  <article class="compare-column">
+    <p class="eyebrow"><span class="compare-label" aria-hidden="true"></span><span class="visually-hidden">Comparison {{ position }}</span> · Run #{{ run.id }}</p>
+    <div class="detail-title compact">
+      <h2><a href="{{ url_for('run_detail', run_id=run.id) }}">{{ run.name }}</a></h2>
+      <span class="status {{ run.status }}">{{ run.status }}</span>
+    </div>
+    <dl class="metadata compact-metadata">
+      <div><dt>Model</dt><dd>{{ run.model }}</dd></div>
+      <div><dt>Created</dt><dd>{{ run.created_at }}</dd></div>
+      <div><dt>Duration</dt><dd>{% if run.duration_ms is not none %}{{ run.duration_ms }} ms{% else %}—{% endif %}</dd></div>
+      <div><dt>Tokens (prompt / completion)</dt><dd>{{ run.prompt_tokens if run.prompt_tokens is not none else '—' }} / {{ run.completion_tokens if run.completion_tokens is not none else '—' }}</dd></div>
+    </dl>
+    <section class="content-block">
+      <h3>System prompt</h3>
+      {% if run.system_prompt %}<pre>{{ run.system_prompt }}</pre>{% else %}<p class="muted">None recorded.</p>{% endif %}
+    </section>
+    <section class="content-block">
+      <h3>User prompt</h3>
+      <pre>{{ run.user_prompt }}</pre>
+    </section>
+    <section class="content-block">
+      <h3>Parameters</h3>
+      <pre>{{ run.parameters }}</pre>
+    </section>
+    <section class="content-block {% if run.status == 'failed' %}error-content{% else %}response-content{% endif %}">
+      <h3>{{ 'Error' if run.status == 'failed' else 'Response' }}</h3>
+      <pre>{{ run.error if run.status == 'failed' else run.response }}</pre>
+    </section>
+  </article>
+{% endmacro %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compare runs · PromptTrace</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">PT</span><span>PromptTrace<small>prompt experiments</small></span></a>
+    <nav><a href="{{ url_for('index') }}#workbench">Workbench</a><a href="{{ url_for('quickstart') }}">Quickstart</a><a class="nav-pill" href="{{ url_for('index') }}#history">Back to history →</a></nav>
+  </header>
+
+  <main>
+    <section class="panel compare-panel" aria-labelledby="compare-heading">
+      <p class="eyebrow">Side by side</p>
+      <h1 id="compare-heading">Compare runs</h1>
+      <div class="compare-grid">
+        {% for run in runs %}
+          {{ run_column(run, loop.index) }}
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+</body>
+</html>

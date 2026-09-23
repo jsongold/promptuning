@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prompttrace.dev/schemas/trace-record-1.0.json",
+  "title": "TraceRecord",
+  "description": "Language-neutral trace contract shared by the Python and TypeScript SDKs. See PromptTrace_DESIGN.md section 7.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "operation",
+    "startedAt",
+    "endedAt",
+    "durationMs",
+    "status",
+    "keys",
+    "artifacts",
+    "metrics",
+    "sdk"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parentId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "operation": {
+      "type": "string",
+      "minLength": 1
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "endedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "durationMs": {
+      "type": "number",
+      "minimum": 0
+    },
+    "status": {
+      "enum": ["ok", "error"]
+    },
+    "keys": {
+      "type": "object",
+      "maxProperties": 64,
+      "additionalProperties": {
+        "type": ["string", "number", "boolean"]
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "metrics": {
+      "type": "object",
+      "maxProperties": 128,
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "error": {
+      "type": "object",
+      "required": ["message"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string" },
+        "message": { "type": "string" },
+        "stack": { "type": "string" },
+        "data": {}
+      }
+    },
+    "sdk": {
+      "type": "object",
+      "required": ["language", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "language": {
+          "enum": ["python", "typescript"]
+        },
+        "version": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+[project]
+name = "prompttrace-ui"
+version = "0.1.0"
+description = "PromptTrace local analysis UI (read-only Explorer over the DuckDB analysis store)"
+readme = "../../../README.md"
+requires-python = ">=3.10"
+dynamic = ["dependencies"]
+
+[tool.poetry.dependencies]
+flask = ">=3.0,<4"
+prompttrace-importer = { path = "../../importer/python", develop = true }
+
+[project.scripts]
+prompttrace-ui = "prompttrace_ui.cli:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

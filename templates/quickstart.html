@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quickstart · PromptTrace</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">PT</span><span>PromptTrace<small>prompt experiments</small></span></a>
+    <nav aria-label="Primary navigation"><a href="{{ url_for('index') }}#workbench">Workbench</a><a href="{{ url_for('index') }}#history">History</a><a aria-current="page" href="{{ url_for('quickstart') }}">Quickstart</a><a class="nav-pill" href="{{ url_for('index') }}">Open app →</a></nav>
+  </header>
+  <main id="main-content" class="docs-shell">
+    <aside class="docs-nav"><p>Get started</p><a class="active" href="#configure">01 · Configure</a><a href="#experiment">02 · Experiment</a><a href="#review">03 · Review</a></aside>
+    <article class="docs-content">
+      <p class="hero-kicker"><span></span> Quickstart</p>
+      <h1>Your first comparison<br>in <mark>three steps.</mark></h1>
+      <p class="docs-lead">PromptTrace works with any provider that implements the OpenAI-compatible Chat Completions API. Credentials remain on your server.</p>
+      <div class="connection {{ 'ready' if provider_ready else 'missing' }}"><i></i>{{ 'This instance is configured' if provider_ready else 'This instance still needs a provider' }}</div>
+
+      <section class="docs-step" id="configure">
+        <span class="step-number">01</span><div><p class="eyebrow dark">Configure once</p><h2>Connect your endpoint</h2><p>Set the full Chat Completions URL, API key, and default model before starting PromptTrace.</p>
+          <div class="code-block"><div><span>Environment</span><button type="button" data-copy="config-code">Copy</button></div><pre id="config-code">export PROMPTTRACE_API_URL="https://api.example.com/v1/chat/completions"
+export PROMPTTRACE_API_KEY="your-api-key"
+export PROMPTTRACE_MODEL="your-model"</pre></div>
+          <p class="note">For a local server without authentication, omit <code>PROMPTTRACE_API_KEY</code>.</p>
+        </div>
+      </section>
+      <section class="docs-step" id="experiment">
+        <span class="step-number">02</span><div><p class="eyebrow dark">Build the test</p><h2>Add prompt variants</h2><p>Open the workbench, keep the shared system prompt constant, and give each column a prompt, model, and temperature. Add as many columns as the experiment needs.</p><a class="button lime ink" href="{{ url_for('index') }}#workbench">Open workbench →</a></div>
+      </section>
+      <section class="docs-step" id="review">
+        <span class="step-number">03</span><div><p class="eyebrow dark">Learn from it</p><h2>Run, compare, repeat</h2><p>PromptTrace executes variants concurrently, records failures alongside successes, and opens the immutable results side by side. Revisit or export every trace from the archive.</p><div class="quick-grid"><div><strong>Parallel</strong><span>One wait, every result</span></div><div><strong>Traceable</strong><span>Exact inputs preserved</span></div><div><strong>Comparable</strong><span>A · B · C · …</span></div></div></div>
+      </section>
+    </article>
+  </main>
+  <script>
+    document.querySelectorAll('[data-copy]').forEach(button => button.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(document.querySelector(`#${button.dataset.copy}`).textContent);
+      button.textContent = 'Copied';
+    }));
+  </script>
+</body>
+</html>

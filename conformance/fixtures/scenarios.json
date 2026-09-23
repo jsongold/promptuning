@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0",
+  "scenarios": [
+    {
+      "name": "case-01-ok-add",
+      "operation": "conformance.add",
+      "fn": "add",
+      "args": [2, 3],
+      "expectedOutput": 5,
+      "keys": { "experiment": "exp-001", "variant": "v1" },
+      "artifacts": { "prompt": "system" },
+      "metrics": { "tokens.total": 8 }
+    },
+    {
+      "name": "case-02-error",
+      "operation": "conformance.boom",
+      "fn": "boom",
+      "args": [],
+      "expectedError": { "type": "TypeError", "message": "bad input" }
+    },
+    {
+      "name": "case-03-redaction",
+      "operation": "conformance.login",
+      "fn": "identity",
+      "args": [{ "api_key": "secret-value", "user": "alice" }],
+      "expectedOutput": { "api_key": "secret-value", "user": "alice" },
+      "redactSensitive": true
+    },
+    {
+      "name": "case-04-capture-off",
+      "operation": "conformance.no-capture",
+      "fn": "double",
+      "args": [21],
+      "expectedOutput": 42,
+      "captureInput": false,
+      "captureOutput": false,
+      "artifacts": { "note": "only-resolver" },
+      "metrics": {}
+    },
+    {
+      "name": "case-05-runtime-keys",
+      "operation": "conformance.runtime",
+      "fn": "identity",
+      "args": [{ "case_id": "c-9" }],
+      "expectedOutput": { "case_id": "c-9" },
+      "runtimeKeys": { "case": "c-9" },
+      "metrics": {}
+    }
+  ]
+}

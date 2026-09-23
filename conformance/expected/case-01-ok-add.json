@@ -1,0 +1,1 @@
+{"scenario":"case-01-ok-add","operation":"conformance.add","status":"ok","keys":{"experiment":"exp-001","variant":"v1"},"artifacts":{"input":{"args":[2,3]},"output":5,"prompt":"system"},"metrics":{"tokens.total":8},"sdkVersion":"0.1.0"}

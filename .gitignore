@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.py[cod]
+instance/
+.prompttrace/
+node_modules/
+.env.local

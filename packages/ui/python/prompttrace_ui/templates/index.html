@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PromptTrace · Trace analysis</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">PT</span><span>PromptTrace<small>trace analysis</small></span></a>
+    <nav aria-label="Primary navigation">
+      <a aria-current="page" href="{{ url_for('index') }}">Traces</a>
+      <a href="{{ url_for('index') }}#compare">Compare</a>
+      <span class="db-hint">{{ db }}</span>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <section class="panel trace-panel">
+      <p class="eyebrow dark">Analysis store</p>
+      <h1 class="page-title">Every run, reproducible.</h1>
+      {% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+
+      <form method="get" action="{{ url_for('index') }}" class="filter-bar">
+        <label>Experiment<input name="experiment" value="{{ filters.experiment }}" placeholder="exp-003"></label>
+        <label>Variant<input name="variant" value="{{ filters.variant }}" placeholder="v1"></label>
+        <label>Case<input name="case" value="{{ filters.case }}" placeholder="case-1"></label>
+        <label>Status<select name="status">
+          <option value="">All</option>
+          <option value="ok" {{ 'selected' if filters.status == 'ok' }}>ok</option>
+          <option value="error" {{ 'selected' if filters.status == 'error' }}>error</option>
+        </select></label>
+        <label>Search<input name="q" value="{{ filters.q }}" placeholder="text…"></label>
+        <button class="button dark" type="submit">Filter →</button>
+      </form>
+
+      <section id="compare" aria-labelledby="compare-heading">
+        <h2 class="section-heading" id="compare-heading">Variant comparison</h2>
+        {% if compare_rows %}
+          <table class="summary-table">
+            <thead><tr>
+              <th>Variant</th><th>Runs</th><th>Success</th><th>Avg score</th><th>p50 ms</th><th>p95 ms</th><th>Tokens</th><th>Cost</th><th>Δ score</th><th>Δ p50</th>
+            </tr></thead>
+            <tbody>
+              {% for row in compare_rows %}
+                <tr class="{{ 'baseline' if row.is_baseline }}">
+                  <td><strong>{{ row.variant }}</strong></td>
+                  <td>{{ row.runs }}</td>
+                  <td>{{ row.success }}</td>
+                  <td>{{ '%.3f'|format(row.avg_score) if row.avg_score is not none else '—' }}</td>
+                  <td>{{ '%.0f'|format(row.p50_ms) if row.p50_ms is not none else '—' }}</td>
+                  <td>{{ '%.0f'|format(row.p95_ms) if row.p95_ms is not none else '—' }}</td>
+                  <td>{{ row.tokens }}</td>
+                  <td>{{ row.cost }}</td>
+                  <td>{{ '%+.3f'|format(row.score_diff) if row.score_diff is not none else '—' }}</td>
+                  <td>{{ '%+d'|format(row.p50_diff) if row.p50_diff is not none else '—' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <p class="muted">Baseline is the variant with the most runs; Δ is relative to it.</p>
+        {% else %}
+          <p class="muted">No matching traces.</p>
+        {% endif %}
+      </section>
+
+      <section id="side-by-side" aria-labelledby="sbs-heading">
+        <h2 class="section-heading" id="sbs-heading">Side by side</h2>
+        {% if compare_cases %}
+          {% for group in compare_cases %}
+            <div class="compare-case">
+              <p class="case-label">{{ group.case }}</p>
+              <div class="compare-grid">
+                {% for col in group.columns %}
+                  <a class="compare-column {{ col.status }}" href="{{ url_for('detail', trace_id=col.id) }}">
+                    <span class="compare-head"><strong>{{ col.letter }}</strong><span>{{ col.variant }}</span><span class="status {{ col.status }}">{{ col.status }}</span></span>
+                    {% if col.prompt %}<p class="case-prompt"><small>prompt</small>{{ col.prompt }}</p>{% endif %}
+                    {% if col.error %}<p class="case-error"><small>error</small>{{ col.error }}</p>{% endif %}
+                    <p class="case-output"><small>output</small>{{ col.output or '—' }}</p>
+                  </a>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="muted">No cases to pair — add the same <code>case</code> key across variants to see them side by side.</p>
+        {% endif %}
+      </section>
+
+      <section aria-labelledby="list-heading">
+        <div class="section-title"><div><h2 class="section-heading" id="list-heading">Traces</h2></div><span>{{ items|length }} shown</span></div>
+        {% if items %}
+          <div class="trace-list">
+            {% for item in items %}
+              <a class="trace-row" href="{{ url_for('detail', trace_id=item.id) }}">
+                <span class="status {{ item.status }}">{{ item.status }}</span>
+                <span class="run-index">{{ item.id[:8] }}</span>
+                <span class="run-main">
+                  <strong>{{ item.operation }}</strong>
+                  <small>{{ item['keys']|join(', ') }}</small>
+                </span>
+                <span>{{ item.durationMs|round(1) }} ms</span>
+                <time datetime="{{ item.startedAt }}">{{ item.startedAt[:10] }} {{ item.startedAt[11:19] }}</time>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state"><span>00</span><h3>No traces yet.</h3><p>Run an SDK example, then `prompttrace load --source …`.</p></div>
+        {% endif %}
+      </section>
+    </section>
+  </main>
+
+  <footer><span>PromptTrace</span><p>Local analysis of traced agent runs.</p></footer>
+</body>
+</html>

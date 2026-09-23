@@ -1,0 +1,1 @@
+{"scenario":"case-05-runtime-keys","operation":"conformance.runtime","status":"ok","keys":{"case":"c-9"},"artifacts":{"input":{"args":[{"case_id":"c-9"}]},"output":{"case_id":"c-9"}},"metrics":{},"sdkVersion":"0.1.0"}

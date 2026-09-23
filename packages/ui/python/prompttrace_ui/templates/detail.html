@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ record.operation }} · PromptTrace</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">PT</span><span>PromptTrace<small>trace analysis</small></span></a>
+    <nav aria-label="Primary navigation"><a href="{{ url_for('index') }}">← Back to traces</a></nav>
+  </header>
+
+  <main class="narrow">
+    <article class="panel detail-panel">
+      <div class="detail-title">
+        <div>
+          <p class="eyebrow dark">{{ record.id }}</p>
+          <h1>{{ record.operation }}</h1>
+        </div>
+        <span class="status {{ record.status }}">{{ record.status }}</span>
+      </div>
+
+      <dl class="metadata">
+        <div><dt>Started</dt><dd>{{ record.startedAt }}</dd></div>
+        <div><dt>Duration</dt><dd>{{ record.durationMs }} ms</dd></div>
+        <div><dt>SDK</dt><dd>{{ record.sdk.language }} {{ record.sdk.version }}</dd></div>
+        <div><dt>Schema</dt><dd>{{ record.schemaVersion }}</dd></div>
+      </dl>
+
+      <section class="content-block">
+        <h2>Keys</h2>
+        {% if record['keys'] %}<pre>{{ record['keys'] | tojson(indent=2) }}</pre>{% else %}<p class="muted">No keys.</p>{% endif %}
+      </section>
+      <section class="content-block">
+        <h2>Metrics</h2>
+        {% if record['metrics'] %}<pre>{{ record['metrics'] | tojson(indent=2) }}</pre>{% else %}<p class="muted">No metrics.</p>{% endif %}
+      </section>
+
+      {% for name, value in record['artifacts'].items() %}
+        <section class="content-block {% if name == 'output' %}response-content{% endif %}">
+          <h2>{{ name }}</h2>
+          <pre>{{ value | tojson(indent=2) }}</pre>
+        </section>
+      {% endfor %}
+
+      {% if record.error %}
+        <section class="content-block error-content">
+          <h2>Error</h2>
+          <pre>{{ record.error | tojson(indent=2) }}</pre>
+        </section>
+      {% endif %}
+
+      <section class="content-block">
+        <h2>Raw record</h2>
+        <details><summary>Show JSON</summary><pre>{{ raw }}</pre></details>
+      </section>
+    </article>
+  </main>
+</body>
+</html>

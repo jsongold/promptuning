@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ run.name }} · PromptTrace</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">PT</span><span>PromptTrace<small>prompt experiments</small></span></a>
+    <nav><a href="{{ url_for('index') }}#workbench">Workbench</a><a href="{{ url_for('quickstart') }}">Quickstart</a><a class="nav-pill" href="{{ url_for('index') }}#history">Back to history →</a></nav>
+  </header>
+
+  <main class="narrow">
+    <article class="panel detail-panel">
+      <div class="detail-title">
+        <div>
+          <p class="eyebrow">Run #{{ run.id }}</p>
+          <h1>{{ run.name }}</h1>
+        </div>
+        <span class="status {{ run.status }}">{{ run.status }}</span>
+      </div>
+
+      <dl class="metadata">
+        <div><dt>Model</dt><dd>{{ run.model }}</dd></div>
+        <div><dt>Created</dt><dd><time datetime="{{ run.created_at }}">{{ run.created_at }}</time></dd></div>
+        <div><dt>Duration</dt><dd>{% if run.duration_ms is not none %}{{ run.duration_ms }} ms{% else %}—{% endif %}</dd></div>
+        <div><dt>Prompt tokens</dt><dd>{{ run.prompt_tokens if run.prompt_tokens is not none else '—' }}</dd></div>
+        <div><dt>Completion tokens</dt><dd>{{ run.completion_tokens if run.completion_tokens is not none else '—' }}</dd></div>
+      </dl>
+
+      <section class="content-block">
+        <h2>System prompt</h2>
+        {% if run.system_prompt %}<pre>{{ run.system_prompt }}</pre>{% else %}<p class="muted">No system prompt recorded.</p>{% endif %}
+      </section>
+      <section class="content-block">
+        <h2>User prompt</h2>
+        <pre>{{ run.user_prompt }}</pre>
+      </section>
+      <section class="content-block">
+        <h2>Parameters</h2>
+        <pre>{{ run.parameters }}</pre>
+      </section>
+      {% if run.status == 'failed' %}
+        <section class="content-block error-content">
+          <h2>Error</h2>
+          <pre>{{ run.error }}</pre>
+        </section>
+      {% else %}
+        <section class="content-block response-content">
+          <h2>Response</h2>
+          {% if run.response %}<pre>{{ run.response }}</pre>{% else %}<p class="muted">The run returned no content.</p>{% endif %}
+        </section>
+      {% endif %}
+    </article>
+  </main>
+</body>
+</html>

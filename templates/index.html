@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PromptTrace · Parallel prompt experiments</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">PT</span><span>PromptTrace<small>prompt experiments</small></span></a>
+    <nav aria-label="Primary navigation">
+      <a href="#workbench">Workbench</a>
+      <a href="#history">History</a>
+      <a href="{{ url_for('quickstart') }}">Quickstart</a>
+      <a class="nav-pill" href="{{ url_for('export_runs') }}">Export JSON ↗</a>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <section class="hero">
+      <div class="hero-kicker"><span></span> Parallel prompt evaluation</div>
+      <h1>Find the prompt<br>that <mark>actually works.</mark></h1>
+      <p>Run unlimited variants at once. Compare every response, token, error, and millisecond—without losing the exact inputs that produced them.</p>
+      <div class="hero-meta"><span>∞ variants</span><span>Immutable traces</span><span>Local-first</span></div>
+    </section>
+
+    {% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+
+    <section class="workbench" id="workbench" aria-labelledby="workbench-heading">
+      <div class="workbench-head">
+        <div><p class="eyebrow">Live workbench</p><h2 id="workbench-heading">Run prompts in parallel</h2></div>
+        <span class="connection {{ 'ready' if provider_ready else 'missing' }}"><i></i>{{ 'Provider ready' if provider_ready else 'Setup needed' }}</span>
+      </div>
+
+      {% if not provider_ready %}
+        <div class="setup-callout"><strong>Connect an OpenAI-compatible endpoint to execute prompts.</strong><span>It takes three environment variables.</span><a href="{{ url_for('quickstart') }}">Open Quickstart →</a></div>
+      {% endif %}
+
+      <form action="{{ url_for('run_experiment') }}" method="post" id="experiment-form">
+        <div class="system-field">
+          <label for="experiment-system">Shared system prompt <span>optional</span></label>
+          <textarea id="experiment-system" name="system_prompt" rows="3" placeholder="Give every variant the same role or constraints…"></textarea>
+        </div>
+
+        <div class="variant-grid" id="variant-grid">
+          {% for letter in ('A', 'B') %}
+            <article class="variant-card">
+              <div class="variant-head"><span class="variant-label">{{ letter }}</span><button class="remove-variant" type="button" aria-label="Remove variant {{ letter }}">×</button></div>
+              <label>Prompt<textarea name="prompt" rows="8" required placeholder="Write a prompt variant…">{{ 'Explain prompt tracing in one sentence.' if letter == 'A' else 'Explain prompt tracing with a memorable analogy.' }}</textarea></label>
+              <div class="variant-settings">
+                <label>Model<input name="model" required value="{{ default_model }}" placeholder="e.g. gpt-4.1-mini"></label>
+                <label>Temperature<input name="temperature" type="number" min="0" max="2" step="0.1" value="{{ '0.2' if letter == 'A' else '0.8' }}" required></label>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+
+        <div class="workbench-actions">
+          <button class="button ghost" type="button" id="add-variant">＋ Add variant</button>
+          <button class="button lime" type="submit" id="run-button">Run all variants <span>→</span></button>
+        </div>
+      </form>
+    </section>
+
+    <section class="history-section" id="history" aria-labelledby="history-heading">
+      <div class="section-title">
+        <div><p class="eyebrow dark">Trace archive</p><h2 id="history-heading">Every run, reproducible.</h2></div>
+        <span>{{ runs|length }} trace{{ '' if runs|length == 1 else 's' }}</span>
+      </div>
+      {% if runs %}
+        <form action="{{ url_for('compare') }}" method="get" id="compare-form">
+          <div class="history-list">
+            {% for run in runs %}
+              <label class="history-row">
+                <input type="checkbox" name="run" value="{{ run.id }}">
+                <span class="run-index">#{{ '%03d'|format(run.id) }}</span>
+                <span class="run-main"><a href="{{ url_for('run_detail', run_id=run.id) }}">{{ run.name }}</a><small>{{ run.user_prompt|truncate(86) }}</small></span>
+                <span>{{ run.model }}</span>
+                <span class="status {{ run.status }}">{{ run.status }}</span>
+                <time datetime="{{ run.created_at }}">{{ run.created_at[:10] }}</time>
+              </label>
+            {% endfor %}
+          </div>
+          <div class="compare-bar"><p id="compare-help" aria-live="polite">Select at least two traces to compare.</p><button class="button dark" type="submit" id="compare-button" disabled>Compare selected →</button></div>
+        </form>
+      {% else %}
+        <div class="empty-state"><span>01</span><h3>No traces yet.</h3><p>Your first parallel experiment will appear here.</p></div>
+      {% endif %}
+    </section>
+  </main>
+
+  <footer><span>PromptTrace</span><p>Local-first prompt experiments. Your provider key stays server-side.</p></footer>
+
+  <template id="variant-template">
+    <article class="variant-card">
+      <div class="variant-head"><span class="variant-label"></span><button class="remove-variant" type="button">×</button></div>
+      <label>Prompt<textarea name="prompt" rows="8" required placeholder="Write a prompt variant…"></textarea></label>
+      <div class="variant-settings">
+        <label>Model<input name="model" required value="{{ default_model }}" placeholder="e.g. gpt-4.1-mini"></label>
+        <label>Temperature<input name="temperature" type="number" min="0" max="2" step="0.1" value="0.5" required></label>
+      </div>
+    </article>
+  </template>
+  <script>
+    const grid = document.querySelector('#variant-grid');
+    const labelFor = number => {
+      let label = '';
+      while (number) { number--; label = String.fromCharCode(65 + number % 26) + label; number = Math.floor(number / 26); }
+      return label;
+    };
+    const refreshVariants = () => {
+      const cards = [...grid.querySelectorAll('.variant-card')];
+      cards.forEach((card, index) => {
+        const label = labelFor(index + 1);
+        card.querySelector('.variant-label').textContent = label;
+        const remove = card.querySelector('.remove-variant');
+        remove.disabled = cards.length === 2;
+        remove.setAttribute('aria-label', `Remove variant ${label}`);
+      });
+    };
+    document.querySelector('#add-variant').addEventListener('click', () => {
+      grid.append(document.querySelector('#variant-template').content.cloneNode(true));
+      refreshVariants();
+      grid.lastElementChild.querySelector('textarea').focus();
+    });
+    grid.addEventListener('click', event => {
+      if (event.target.matches('.remove-variant') && !event.target.disabled) {
+        event.target.closest('.variant-card').remove();
+        refreshVariants();
+      }
+    });
+    document.querySelector('#experiment-form').addEventListener('submit', () => {
+      const button = document.querySelector('#run-button');
+      button.disabled = true;
+      button.textContent = 'Running in parallel…';
+    });
+    refreshVariants();
+
+    const compareForm = document.querySelector('#compare-form');
+    if (compareForm) {
+      const boxes = [...compareForm.querySelectorAll('input[name="run"]')];
+      const button = document.querySelector('#compare-button');
+      const help = document.querySelector('#compare-help');
+      compareForm.addEventListener('change', () => {
+        const count = boxes.filter(box => box.checked).length;
+        button.disabled = count < 2;
+        help.textContent = count < 2 ? `Select ${2 - count} more trace${count === 1 ? '' : 's'} to compare.` : `${count} traces selected.`;
+      });
+    }
+  </script>
+</body>
+</html>
